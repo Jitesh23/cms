@@ -5,6 +5,9 @@ const router = express.Router();
 const {isEmpty} = require('../../helpers/helper-upload');
 
 const Post = require('../../models/Post');
+const Category = require('../../models/Category');
+
+// const {userauthenticate} = require('../../helpers/authentication');
 
 router.all('/*', (req,res,next) =>{
     req.app.locals.layout = 'admin';
@@ -13,7 +16,10 @@ router.all('/*', (req,res,next) =>{
 
 router.get('/', (req, res) => {
 
-    Post.find({}).then(posts=>{
+    Post.find({})
+    .populate('category')
+    
+    .then(posts=>{
         res.render('admin/posts', {posts: posts});
 
 
@@ -23,14 +29,17 @@ router.get('/', (req, res) => {
 })
 
 router.get('/create', (req, res) => {
-    res.render('admin/posts/create');
+
+    Category.find({}).then(categories =>{
+        res.render('admin/posts/create', {categories: categories});
+    })
+    
 })
 
 
 router.post('/create', (req, res) => {
 
     let errors = [];
-
 
     if (!req.body.title){
         errors.push({
@@ -44,8 +53,6 @@ router.post('/create', (req, res) => {
         });     
     }
 
-
-
     if (errors.length > 0){
         res.render('admin/posts/create', {
             errors: errors
@@ -56,7 +63,7 @@ router.post('/create', (req, res) => {
 
     if (!isEmpty(req.files)){
         let file = req.files.file;
-        let filename = Date.now() + '-' + file.name;
+        filename = Date.now() + '-' + file.name;
 
     file.mv('./public/uploads/' + filename, (err) => {
         if (err) throw err;
@@ -81,6 +88,7 @@ router.post('/create', (req, res) => {
     
    let newPost = new Post({
         title: req.body.title,
+        category: req.body.category,
         status: req.body.status,
         allowComments: allowComments,
         body: req.body.body,
@@ -88,6 +96,8 @@ router.post('/create', (req, res) => {
     });
 
     newPost.save().then(savedData=>{
+
+        req.flash('success_message', `Post was created succussfully for title ${savedData.title}`);
 
         res.redirect('/admin/posts');
     }).catch(err =>{
@@ -105,8 +115,10 @@ router.get('/edit/:id', (req, res)=>{
 
     Post.findOne({_id: req.params.id}).then((post) =>{
         
-        res.render('admin/posts/edit', {post:post});
-
+        Category.find({}).then(categories =>{
+            res.render('admin/posts/edit', {post:post,categories: categories});
+        })
+        
     })
 
 });
@@ -114,6 +126,7 @@ router.get('/edit/:id', (req, res)=>{
 router.put('/edit/:id', (req, res)=>{
 
     Post.findOne({_id: req.params.id}).then(post=> {
+
 
         let allowComments = true;
 
@@ -127,8 +140,25 @@ router.put('/edit/:id', (req, res)=>{
         post.status = req.body.status;
         post.allowComments = allowComments;
         post.body = req.body.body;
+        post.category = req.body.category;
+
+        if (!isEmpty(req.files)){
+            let file = req.files.file;
+             filename = Date.now() + '-' + file.name;
+             post.file = filename;
+            file.mv('./public/uploads/' + filename, (err) => {
+            if (err) throw err;
+        });
+    
+        console.log('Is not empty');
+        }else{
+            console.log('Is empty');
+        }
+
 
         post.save().then((updatedPost)=>{
+
+            req.flash('success_message', `Post was edited succussfully for title ${updatedPost.title}`);
             
             res.redirect('/admin/posts');
     })
@@ -139,6 +169,7 @@ router.put('/edit/:id', (req, res)=>{
 
 router.delete('/:id', (req, res)=> {
     Post.remove({_id : req.params.id}).then(result => {
+        req.flash('success_message', `Post was deleted succussfully`);
         res.redirect('/admin/posts');
     })
 });
