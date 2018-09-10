@@ -197,9 +197,13 @@ router.post('/register', (req, res)=>{
 
 router.get('/post/:id', (req, res)=>{
 
-    post.findOne({_id: req.params.id}).then(post => {
+    post.findOne({_id: req.params.id})
+    .populate({path: 'comments', populate: {path: 'user'}})
+    .populate('user')
+    .then(post => {
 
-        Category.find({}).then(categories =>{
+        Category.find({})
+        .then(categories =>{
             res.render('home/post', {post: post, categories: categories});
         })
         

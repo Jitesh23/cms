@@ -15,8 +15,8 @@
       <td>{{id}}</td>
       <td>{{user.firstName}}</td>
       <td>{{datePicker date 'MMMM Do YYYY'}}</td>
-      <td><form class="form-control" action="/admin/comments/delete/{{id}}?_method=DELETE" method="post">
-      <button class="alert-danger">DELETE</button>
+      <td><form action="/admin/comments/delete/{{id}}?_method=DELETE" method="post">
+      <button class="btn btn-danger">DELETE</button>
       </form></td>
     </tr>
     {{/each}}

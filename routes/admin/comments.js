@@ -11,22 +11,24 @@ router.all('/*', (req,res,next) =>{
 
 router.get('/', (req, res)=>{
 
-    Comment.find({})
+    Comment.find({user: req.user.id})
     .populate('user')
     .then(comments=>{
         res.render('admin/comments', {comments: comments});
-    })
-
-    
+    })  
 });
 
 router.delete('/delete/:id', (req, res)=>{
     Comment.remove({_id: req.params.id}).then(result=>{
-        res.redirect('/admin/comments');
+
+        Post.findOneAndUpdate({comments: req.params.id},{$pull:{comments: req.params.id} }, (err, data)=>{
+
+            if (err) return err;
+            res.redirect('/admin/comments');
+        })
+  
     })
 });
-
-
 
 router.post('/', (req, res)=>{
    

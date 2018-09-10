@@ -6,6 +6,7 @@ const {isEmpty} = require('../../helpers/helper-upload');
 
 const Post = require('../../models/Post');
 const Category = require('../../models/Category');
+const fs = require('fs');
 
 // const {userauthenticate} = require('../../helpers/authentication');
 
@@ -28,13 +29,29 @@ router.get('/', (req, res) => {
     })
 })
 
-router.get('/create', (req, res) => {
+router.get('/my-posts', (req, res) => {
 
+    Post.find({user: req.user})
+    .populate('category')
+    
+    .then(posts=>{
+        res.render('admin/posts/my-posts', {posts: posts});
+
+
+    }).catch(err=>{
+        res.send(`Error while fetching the dat ${err}`);
+    })
+})
+
+
+
+router.get('/create', (req, res) => {
     Category.find({}).then(categories =>{
         res.render('admin/posts/create', {categories: categories});
     })
     
 })
+
 
 
 router.post('/create', (req, res) => {
@@ -87,6 +104,7 @@ router.post('/create', (req, res) => {
     console.log(req.body.allowComments);
     
    let newPost = new Post({
+        user: req.user.id,
         title: req.body.title,
         category: req.body.category,
         status: req.body.status,
@@ -106,7 +124,7 @@ router.post('/create', (req, res) => {
     }
     })
     
-
+    
     
 
 router.get('/edit/:id', (req, res)=>{
@@ -135,7 +153,7 @@ router.put('/edit/:id', (req, res)=>{
          }else{
             allowComments = false
         }
-
+        post.user = req.user.id,
         post.title = req.body.title;
         post.status = req.body.status;
         post.allowComments = allowComments;
@@ -168,10 +186,28 @@ router.put('/edit/:id', (req, res)=>{
 });
 
 router.delete('/:id', (req, res)=> {
-    Post.remove({_id : req.params.id}).then(result => {
-        req.flash('success_message', `Post was deleted succussfully`);
-        res.redirect('/admin/posts');
+
+    Post.findOne({_id : req.params.id})
+    .populate('comments')
+    .then(post=>{
+
+        fs.unlink('./public/uploads/' + post.file, (err)=>{
+
+            if (!post.comments.length < 1){
+
+                post.comments.forEach(comment=>{
+                    comment.remove();
+                })
+            }
+            post.remove().then(removedPost =>{
+                req.flash('success_message', `Post was deleted succussfully`);
+                res.redirect('/admin/posts');
+            });
+            
+        })
+        
     })
+
 });
 
 

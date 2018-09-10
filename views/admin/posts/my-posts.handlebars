@@ -1,4 +1,4 @@
-<h1>All Posts</h1>
+<h1>My Posts</h1>
 
 {{> home/form-msgs}}
 
@@ -28,7 +28,14 @@
             <td>{{category.name}}</td>
             <td>{{allowComments}}</td>
              <td>{{datePicker date 'MMMM Do YYYY'}}</td>
-            
+            <td><a href="/admin/posts/edit/{{id}}" class="btn btn-info">Edit</a></td>
+           
+            <td>
+                <form action="/admin/posts/{{id}}?_method=DELETE" method="post">
+                    <button type="submit" class="btn btn-danger">DELETE</button>
+                </form>
+
+            </td>
             
         </tr>
         {{/each}}
